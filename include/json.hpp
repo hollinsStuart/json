@@ -1,8 +1,3 @@
-// Hollins Yu 2024/05/19
-
-// json.hpp
-// JSON parser and serializer in C++17
-
 #ifndef JSON_HPP
 #define JSON_HPP
 
@@ -28,13 +23,13 @@ class JSON {
   JSON(bool b) : value(b) {}
   JSON(int i) : value(i) {}
   JSON(double d) : value(d) {}
-  JSON(const std::string &s) : value(s) {}
-  JSON(const char *s) : value(std::string(s)) {}
-  JSON(const Object &o) : value(o) {}
-  JSON(const Array &a) : value(a) {}
+  JSON(const std::string& s) : value(s) {}
+  JSON(const char* s) : value(std::string(s)) {}
+  JSON(const Object& o) : value(o) {}
+  JSON(const Array& a) : value(a) {}
 
   // Parsing and Serialization
-  static JSON parse(const std::string &jsonString) {
+  static JSON parse(const std::string& jsonString) {
     size_t pos = 0;
     return parseValue(jsonString, pos);
   }
@@ -46,44 +41,44 @@ class JSON {
   }
 
   // Access and Manipulation
-  JSON &operator[](const std::string &key) {
+  JSON& operator[](const std::string& key) {
     if (!isObject()) throw std::runtime_error("Not an object");
     return std::get<Object>(value)[key];
   }
 
-  const JSON &operator[](const std::string &key) const {
+  const JSON& operator[](const std::string& key) const {
     if (!isObject()) throw std::runtime_error("Not an object");
     return std::get<Object>(value).at(key);
   }
 
-  JSON &operator[](size_t index) {
+  JSON& operator[](size_t index) {
     if (!isArray()) throw std::runtime_error("Not an array");
     return std::get<Array>(value)[index];
   }
 
-  const JSON &operator[](size_t index) const {
+  const JSON& operator[](size_t index) const {
     if (!isArray()) throw std::runtime_error("Not an array");
     return std::get<Array>(value).at(index);
   }
 
-  void add(const std::string &key, const JSON &value) {
+  void add(const std::string& key, const JSON& value) {
     if (!isObject()) throw std::runtime_error("Not an object");
     std::get<Object>(this->value)[key] = value;
   }
 
-  void add(const JSON &value) {
+  void add(const JSON& value) {
     if (!isArray()) throw std::runtime_error("Not an array");
     std::get<Array>(this->value).push_back(value);
   }
 
-  void remove(const std::string &key) {
+  void remove(const std::string& key) {
     if (!isObject()) throw std::runtime_error("Not an object");
     std::get<Object>(value).erase(key);
   }
 
   void remove(size_t index) {
     if (!isArray()) throw std::runtime_error("Not an array");
-    auto &array = std::get<Array>(value);
+    auto& array = std::get<Array>(value);
     if (index >= array.size()) throw std::runtime_error("Index out of bounds");
     array.erase(array.begin() + index);
   }
@@ -117,12 +112,12 @@ class JSON {
     return std::get<std::string>(value);
   }
 
-  const Object &toObject() const {
+  const Object& toObject() const {
     if (!isObject()) throw std::runtime_error("Not an object");
     return std::get<Object>(value);
   }
 
-  const Array &toArray() const {
+  const Array& toArray() const {
     if (!isArray()) throw std::runtime_error("Not an array");
     return std::get<Array>(value);
   }
@@ -167,27 +162,30 @@ class JSON {
     return std::get<Array>(value).end();
   }
 
+  template<typename T>
+  T get() const {
+    return std::get<T>(value);
+  }
+
  private:
   Value value;
 
-  static void skipWhitespace(const std::string &jsonString, size_t &pos) {
+  static void skipWhitespace(const std::string& jsonString, size_t& pos) {
     while (std::isspace(jsonString[pos])) ++pos;
   }
 
-  static JSON parseValue(const std::string &jsonString, size_t &pos) {
+  static JSON parseValue(const std::string& jsonString, size_t& pos) {
     skipWhitespace(jsonString, pos);
     if (jsonString[pos] == '{') return parseObject(jsonString, pos);
     if (jsonString[pos] == '[') return parseArray(jsonString, pos);
     if (jsonString[pos] == '"') return parseString(jsonString, pos);
-    if (std::isdigit(jsonString[pos]) || jsonString[pos] == '-')
-      return parseNumber(jsonString,
-                         pos);
+    if (std::isdigit(jsonString[pos]) || jsonString[pos] == '-') return parseNumber(jsonString, pos);
     if (jsonString[pos] == 't' || jsonString[pos] == 'f') return parseBoolean(jsonString, pos);
     if (jsonString[pos] == 'n') return parseNull(jsonString, pos);
     throw std::runtime_error("Invalid JSON value");
   }
 
-  static JSON parseObject(const std::string &jsonString, size_t &pos) {
+  static JSON parseObject(const std::string& jsonString, size_t& pos) {
     Object object;
     ++pos; // skip '{'
     skipWhitespace(jsonString, pos);
@@ -208,7 +206,7 @@ class JSON {
     return JSON(object);
   }
 
-  static JSON parseArray(const std::string &jsonString, size_t &pos) {
+  static JSON parseArray(const std::string& jsonString, size_t& pos) {
     Array array;
     ++pos; // skip '['
     skipWhitespace(jsonString, pos);
@@ -223,7 +221,7 @@ class JSON {
     return JSON(array);
   }
 
-  static JSON parseString(const std::string &jsonString, size_t &pos) {
+  static JSON parseString(const std::string& jsonString, size_t& pos) {
     ++pos; // skip '"'
     std::string result;
     while (jsonString[pos] != '"') {
@@ -247,7 +245,7 @@ class JSON {
     return JSON(result);
   }
 
-  static JSON parseNumber(const std::string &jsonString, size_t &pos) {
+  static JSON parseNumber(const std::string& jsonString, size_t& pos) {
     size_t start = pos;
     if (jsonString[pos] == '-') ++pos;
     while (std::isdigit(jsonString[pos])) ++pos;
@@ -259,7 +257,7 @@ class JSON {
     return JSON(std::stoi(jsonString.substr(start, pos - start)));
   }
 
-  static JSON parseBoolean(const std::string &jsonString, size_t &pos) {
+  static JSON parseBoolean(const std::string& jsonString, size_t& pos) {
     if (jsonString.substr(pos, 4) == "true") {
       pos += 4;
       return JSON(true);
@@ -271,7 +269,7 @@ class JSON {
     throw std::runtime_error("Invalid boolean value");
   }
 
-  static JSON parseNull(const std::string &jsonString, size_t &pos) {
+  static JSON parseNull(const std::string& jsonString, size_t& pos) {
     if (jsonString.substr(pos, 4) == "null") {
       pos += 4;
       return JSON();
@@ -279,41 +277,34 @@ class JSON {
     throw std::runtime_error("Invalid null value");
   }
 
-  void serialize(std::ostream &os) const {
-    std::visit([&os](auto &&arg) {
+  void serialize(std::ostream& os) const {
+    std::visit([&os](auto&& arg) {
       using T = std::decay_t<decltype(arg)>;
-      if constexpr(std::is_same_v < T, std::nullptr_t > )
-      os << "null";
-      else if constexpr(std::is_same_v < T, bool > )
-      os << (arg ? "true" : "false");
-      else if constexpr(std::is_same_v < T, int > )
-      os << arg;
-      else if constexpr(std::is_same_v < T, double > )
-      os << arg;
-      else if constexpr(std::is_same_v < T, std::string > )
-      os << "\"" << arg << "\"";
-      else if constexpr(std::is_same_v < T, Object > )
-      {
-        os << "{";
-        bool first = true;
-        for (const auto &[key, value] : arg) {
-          if (!first) os << ",";
-          os << "\"" << key << "\":";
-          value.serialize(os);
-          first = false;
-        }
-        os << "}";
-      } else if constexpr(std::is_same_v < T, Array > )
-      {
-        os << "[";
-        bool first = true;
-        for (const auto &value : arg) {
-          if (!first) os << ",";
-          value.serialize(os);
-          first = false;
-        }
-        os << "]";
+      if constexpr (std::is_same_v<T, std::nullptr_t>) os << "null";
+      else if constexpr (std::is_same_v<T, bool>) os << (arg ? "true" : "false");
+      else if constexpr (std::is_same_v<T, int>) os << arg;
+      else if constexpr (std::is_same_v<T, double>) os << arg;
+      else if constexpr (std::is_same_v<T, std::string>) os << "\"" << arg << "\"";
+      else if constexpr (std::is_same_v<T, Object>) {
+      os << "{";
+      bool first = true;
+      for (const auto& [key, value] : arg) {
+        if (!first) os << ",";
+        os << "\"" << key << "\":";
+        value.serialize(os);
+        first = false;
       }
+      os << "}";
+    } else if constexpr (std::is_same_v<T, Array>) {
+      os << "[";
+      bool first = true;
+      for (const auto& value : arg) {
+        if (!first) os << ",";
+        value.serialize(os);
+        first = false;
+      }
+      os << "]";
+    }
     }, value);
   }
 };

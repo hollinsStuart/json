@@ -1,0 +1,118 @@
+# Ignore all object files, shared object files, and static libraries
+*.o
+*.a
+*.so
+
+# Ignore build directories
+/build/
+/bin/
+/lib/
+/out/
+/dist/
+
+# Ignore CMake build artifacts
+CMakeFiles/
+/CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# Ignore Visual Studio Code workspace settings
+.vscode/
+
+# Ignore JetBrains CLion and other JetBrains IDEs
+.idea/
+
+# Ignore compiled dynamic libraries
+*.dll
+*.dylib
+
+# Ignore executable files
+*.exe
+
+# Ignore temporary files
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Ignore debugging files
+*.dSYM/
+*.vcxproj
+*.vcxproj.user
+*.vcxproj.filters
+
+# Ignore backup files
+*~
+*.bak
+
+# Ignore generated files by build systems
+*.obj
+*.pdb
+*.idb
+*.class
+*.psess
+*.aps
+*.ncb
+*.sdf
+*.suo
+*.opendb
+
+# Ignore custom user files
+*.user
+*.sln
+*.DS_Store
+
+# Ignore MacOS specific files
+.DS_Store
+
+# Ignore Windows specific files
+Thumbs.db
+desktop.ini
+
+# Ignore Python virtual environments
+venv/
+env/
+
+# Ignore compiled Python files
+*.pyc
+__pycache__/
+
+# Ignore CLion specific files
+/.idea/
+/cmake-build-debug/
+/cmake-build-release/
+/external-*
+
+# Ignore compile_commands.json
+compile_commands.json
+
+# Ignore Conan dependencies
+conanbuildinfo.txt
+conaninfo.txt
+conanbuildinfo.cmake
+conan_paths.cmake
+
+# Ignore other editor specific files
+# Sublime Text
+*.sublime-workspace
+
+# Code::Blocks
+*.layout
+*.depend
+*.layout.svg
+
+# Qt Creator
+*.pro.user
+*.pro.user.*
+
+# KDevelop
+*.kdev4
+
+# Kate
+.kate-swp
+
+# Eclipse
+.project
+.cproject

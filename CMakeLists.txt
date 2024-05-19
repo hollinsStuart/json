@@ -37,3 +37,16 @@ target_link_libraries(JSONTests gtest gtest_main pthread)
 # Enable testing and add tests
 enable_testing()
 add_test(NAME JSONTests COMMAND JSONTests)
+
+# Link Google Test libraries
+target_link_libraries(JSONTests gtest gtest_main pthread)
+
+# Find Google Benchmark
+find_package(benchmark REQUIRED)
+
+# Add the benchmark executable
+add_executable(JSONBenchmark benchmarks/json_benchmarks.cpp)
+
+# Link Google Benchmark libraries
+target_link_libraries(JSONBenchmark benchmark::benchmark benchmark::benchmark_main pthread)
+

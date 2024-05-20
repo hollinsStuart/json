@@ -29,6 +29,11 @@ add_executable(JSONTests
         tests/json_parsing_tests.cpp
         tests/json_serialization_tests.cpp
         tests/json_tests.cpp
+        tests/json_prettyprint_test.cpp
+)
+
+add_executable(JSONProject
+        src/main.cpp
 )
 
 # Link Google Test libraries

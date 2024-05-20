@@ -21,13 +21,13 @@ class JSON {
 
   // Constructors
   JSON() : value(nullptr) {}
-  JSON(bool b) : value(b) {}
-  JSON(int i) : value(i) {}
-  JSON(double d) : value(d) {}
-  JSON(const std::string& s) : value(s) {}
-  JSON(const char* s) : value(std::string(s)) {}
-  JSON(const Object& o) : value(o) {}
-  JSON(const Array& a) : value(a) {}
+  explicit JSON(bool b) : value(b) {}
+  explicit JSON(int i) : value(i) {}
+  explicit JSON(double d) : value(d) {}
+  explicit JSON(const std::string& s) : value(s) {}
+  explicit JSON(const char* s) : value(std::string(s)) {}
+  explicit JSON(const Object& o) : value(o) {}
+  explicit JSON(const Array& a) : value(a) {}
 
   // Parsing and Serialization
   static JSON parse(std::string_view jsonString) {
@@ -35,7 +35,7 @@ class JSON {
     return parseValue(jsonString, pos);
   }
 
-  std::string serialize() const {
+  [[nodiscard]] std::string serialize() const {
     std::ostringstream oss;
     serialize(oss);
     return oss.str();
@@ -118,46 +118,46 @@ class JSON {
   }
 
   // Type Checking and Conversion
-  bool isNull() const { return std::holds_alternative<std::nullptr_t>(value); }
-  bool isBool() const { return std::holds_alternative<bool>(value); }
-  bool isInt() const { return std::holds_alternative<int>(value); }
-  bool isDouble() const { return std::holds_alternative<double>(value); }
-  bool isString() const { return std::holds_alternative<std::string>(value); }
-  bool isObject() const { return std::holds_alternative<Object>(value); }
-  bool isArray() const { return std::holds_alternative<Array>(value); }
+  [[nodiscard]] bool isNull() const { return std::holds_alternative<std::nullptr_t>(value); }
+  [[nodiscard]] bool isBool() const { return std::holds_alternative<bool>(value); }
+  [[nodiscard]] bool isInt() const { return std::holds_alternative<int>(value); }
+  [[nodiscard]] bool isDouble() const { return std::holds_alternative<double>(value); }
+  [[nodiscard]] bool isString() const { return std::holds_alternative<std::string>(value); }
+  [[nodiscard]] bool isObject() const { return std::holds_alternative<Object>(value); }
+  [[nodiscard]] bool isArray() const { return std::holds_alternative<Array>(value); }
 
-  bool toBool() const {
+  [[nodiscard]] bool toBool() const {
     if (!isBool()) throw std::runtime_error("Not a bool");
     return std::get<bool>(value);
   }
 
-  int toInt() const {
+  [[nodiscard]] int toInt() const {
     if (!isInt()) throw std::runtime_error("Not an int");
     return std::get<int>(value);
   }
 
-  double toDouble() const {
+  [[nodiscard]] double toDouble() const {
     if (!isDouble()) throw std::runtime_error("Not a double");
     return std::get<double>(value);
   }
 
-  std::string toString() const {
+  [[nodiscard]] std::string toString() const {
     if (!isString()) throw std::runtime_error("Not a string");
     return std::get<std::string>(value);
   }
 
-  const Object& toObject() const {
+  [[nodiscard]] const Object& toObject() const {
     if (!isObject()) throw std::runtime_error("Not an object");
     return std::get<Object>(value);
   }
 
-  const Array& toArray() const {
+  [[nodiscard]] const Array& toArray() const {
     if (!isArray()) throw std::runtime_error("Not an array");
     return std::get<Array>(value);
   }
 
   // Utility Functions
-  bool empty() const {
+  [[nodiscard]] bool empty() const {
     if (isObject()) return std::get<Object>(value).empty();
     if (isArray()) return std::get<Array>(value).empty();
     throw std::runtime_error("Not an object or array");
@@ -197,7 +197,7 @@ class JSON {
   }
 
   template<typename T>
-  T get() const {
+  [[nodiscard]] T get() const {
     return std::get<T>(value);
   }
 
@@ -263,7 +263,7 @@ class JSON {
     skipWhitespace(jsonString, pos);
     while (pos < jsonString.size() && jsonString[pos] != '}') {
       skipWhitespace(jsonString, pos);
-      std::string key = parseString(jsonString, pos).get<std::string>();
+      auto key = parseString(jsonString, pos).get<std::string>();
       skipWhitespace(jsonString, pos);
       if (jsonString[pos] != ':') throw std::runtime_error("Expected ':' in object");
       ++pos; // skip ':'
@@ -349,7 +349,7 @@ class JSON {
   static JSON parseNull(std::string_view jsonString, size_t& pos) {
     if (jsonString.substr(pos, 4) == "null") {
       pos += 4;
-      return JSON();
+      return {};
     }
     throw std::runtime_error("Invalid null value");
   }

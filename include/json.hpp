@@ -6,6 +6,7 @@
 #include <vector>
 #include <variant>
 #include <string>
+#include <string_view>
 #include <stdexcept>
 #include <sstream>
 #include <type_traits>
@@ -29,7 +30,7 @@ class JSON {
   JSON(const Array& a) : value(a) {}
 
   // Parsing and Serialization
-  static JSON parse(const std::string& jsonString) {
+  static JSON parse(std::string_view jsonString) {
     size_t pos = 0;
     return parseValue(jsonString, pos);
   }
@@ -42,44 +43,77 @@ class JSON {
 
   // Access and Manipulation
   JSON& operator[](const std::string& key) {
-    if (!isObject()) throw std::runtime_error("Not an object");
+    if (!isObject()) throw std::runtime_error("Not an object: attempted to access key '" + key + "'");
     return std::get<Object>(value)[key];
   }
 
   const JSON& operator[](const std::string& key) const {
-    if (!isObject()) throw std::runtime_error("Not an object");
+    if (!isObject()) throw std::runtime_error("Not an object: attempted to access key '" + key + "'");
     return std::get<Object>(value).at(key);
   }
 
   JSON& operator[](size_t index) {
-    if (!isArray()) throw std::runtime_error("Not an array");
+    if (!isArray()) throw std::runtime_error("Not an array: attempted to access index " + std::to_string(index));
     return std::get<Array>(value)[index];
   }
 
   const JSON& operator[](size_t index) const {
-    if (!isArray()) throw std::runtime_error("Not an array");
+    if (!isArray()) throw std::runtime_error("Not an array: attempted to access index " + std::to_string(index));
     return std::get<Array>(value).at(index);
   }
 
+  // Overload the assignment operator for JSON objects
+  JSON& operator=(const JSON& other) {
+    value = other.value;
+    return *this;
+  }
+
+  // Overload the assignment operator for JSON objects to accept different value types
+  JSON& operator=(const std::string& s) {
+    value = s;
+    return *this;
+  }
+
+  JSON& operator=(const char* s) {
+    value = std::string(s);
+    return *this;
+  }
+
+  JSON& operator=(bool b) {
+    value = b;
+    return *this;
+  }
+
+  JSON& operator=(int i) {
+    value = i;
+    return *this;
+  }
+
+  JSON& operator=(double d) {
+    value = d;
+    return *this;
+  }
+
+  // Add methods
   void add(const std::string& key, const JSON& value) {
-    if (!isObject()) throw std::runtime_error("Not an object");
+    if (!isObject()) throw std::runtime_error("Not an object: attempted to add key '" + key + "'");
     std::get<Object>(this->value)[key] = value;
   }
 
   void add(const JSON& value) {
-    if (!isArray()) throw std::runtime_error("Not an array");
+    if (!isArray()) throw std::runtime_error("Not an array: attempted to add value");
     std::get<Array>(this->value).push_back(value);
   }
 
   void remove(const std::string& key) {
-    if (!isObject()) throw std::runtime_error("Not an object");
+    if (!isObject()) throw std::runtime_error("Not an object: attempted to remove key '" + key + "'");
     std::get<Object>(value).erase(key);
   }
 
   void remove(size_t index) {
-    if (!isArray()) throw std::runtime_error("Not an array");
+    if (!isArray()) throw std::runtime_error("Not an array: attempted to remove index " + std::to_string(index));
     auto& array = std::get<Array>(value);
-    if (index >= array.size()) throw std::runtime_error("Index out of bounds");
+    if (index >= array.size()) throw std::runtime_error("Index out of bounds: attempted to remove index " + std::to_string(index));
     array.erase(array.begin() + index);
   }
 
@@ -167,29 +201,67 @@ class JSON {
     return std::get<T>(value);
   }
 
+  // Pretty-printing with colors
+  void prettyPrint(std::ostream& os, int indent = 0) const {
+    std::string indentStr(indent, ' ');
+    std::visit([&os, &indentStr, indent](auto&& arg) {
+      using T = std::decay_t<decltype(arg)>;
+      if constexpr (std::is_same_v<T, std::nullptr_t>) {
+        os << "\033[31mnull\033[0m";  // Red
+      } else if constexpr (std::is_same_v<T, bool>) {
+        os << "\033[35m" << (arg ? "true" : "false") << "\033[0m";  // Magenta
+      } else if constexpr (std::is_same_v<T, int> || std::is_same_v<T, double>) {
+        os << "\033[33m" << arg << "\033[0m";  // Yellow
+      } else if constexpr (std::is_same_v<T, std::string>) {
+        os << "\033[32m\"" << arg << "\"\033[0m";  // Green
+      } else if constexpr (std::is_same_v<T, Object>) {
+        os << "{\n";
+        bool first = true;
+        for (const auto& [key, value] : arg) {
+          if (!first) os << ",\n";
+          os << indentStr << "  \033[36m\"" << key << "\"\033[0m: ";
+          value.prettyPrint(os, indent + 2);
+          first = false;
+        }
+        os << "\n" << indentStr << "}";
+      } else if constexpr (std::is_same_v<T, Array>) {
+        os << "[\n";
+        bool first = true;
+        for (const auto& value : arg) {
+          if (!first) os << ",\n";
+          os << indentStr << "  ";
+          value.prettyPrint(os, indent + 2);
+          first = false;
+        }
+        os << "\n" << indentStr << "]";
+      }
+    }, value);
+  }
+
  private:
   Value value;
 
-  static void skipWhitespace(const std::string& jsonString, size_t& pos) {
-    while (std::isspace(jsonString[pos])) ++pos;
+  static void skipWhitespace(std::string_view jsonString, size_t& pos) {
+    while (pos < jsonString.size() && std::isspace(jsonString[pos])) ++pos;
   }
 
-  static JSON parseValue(const std::string& jsonString, size_t& pos) {
+  static JSON parseValue(std::string_view jsonString, size_t& pos) {
     skipWhitespace(jsonString, pos);
-    if (jsonString[pos] == '{') return parseObject(jsonString, pos);
-    if (jsonString[pos] == '[') return parseArray(jsonString, pos);
-    if (jsonString[pos] == '"') return parseString(jsonString, pos);
-    if (std::isdigit(jsonString[pos]) || jsonString[pos] == '-') return parseNumber(jsonString, pos);
-    if (jsonString[pos] == 't' || jsonString[pos] == 'f') return parseBoolean(jsonString, pos);
-    if (jsonString[pos] == 'n') return parseNull(jsonString, pos);
-    throw std::runtime_error("Invalid JSON value");
+    switch (jsonString[pos]) {
+      case '{': return parseObject(jsonString, pos);
+      case '[': return parseArray(jsonString, pos);
+      case '"': return parseString(jsonString, pos);
+      case 't': case 'f': return parseBoolean(jsonString, pos);
+      case 'n': return parseNull(jsonString, pos);
+      default: return parseNumber(jsonString, pos);
+    }
   }
 
-  static JSON parseObject(const std::string& jsonString, size_t& pos) {
+  static JSON parseObject(std::string_view jsonString, size_t& pos) {
     Object object;
     ++pos; // skip '{'
     skipWhitespace(jsonString, pos);
-    while (jsonString[pos] != '}') {
+    while (pos < jsonString.size() && jsonString[pos] != '}') {
       skipWhitespace(jsonString, pos);
       std::string key = parseString(jsonString, pos).get<std::string>();
       skipWhitespace(jsonString, pos);
@@ -202,62 +274,67 @@ class JSON {
       if (jsonString[pos] == ',') ++pos; // skip ','
       skipWhitespace(jsonString, pos);
     }
+    if (pos == jsonString.size() || jsonString[pos] != '}') throw std::runtime_error("Expected '}' in object");
     ++pos; // skip '}'
     return JSON(object);
   }
 
-  static JSON parseArray(const std::string& jsonString, size_t& pos) {
+  static JSON parseArray(std::string_view jsonString, size_t& pos) {
     Array array;
     ++pos; // skip '['
     skipWhitespace(jsonString, pos);
-    while (jsonString[pos] != ']') {
+    while (pos < jsonString.size() && jsonString[pos] != ']') {
       JSON value = parseValue(jsonString, pos);
       array.push_back(value);
       skipWhitespace(jsonString, pos);
       if (jsonString[pos] == ',') ++pos; // skip ','
       skipWhitespace(jsonString, pos);
     }
+    if (pos == jsonString.size() || jsonString[pos] != ']') throw std::runtime_error("Expected ']' in array");
     ++pos; // skip ']'
     return JSON(array);
   }
 
-  static JSON parseString(const std::string& jsonString, size_t& pos) {
+  static JSON parseString(std::string_view jsonString, size_t& pos) {
     ++pos; // skip '"'
     std::string result;
-    while (jsonString[pos] != '"') {
+    while (pos < jsonString.size() && jsonString[pos] != '"') {
       if (jsonString[pos] == '\\') {
         ++pos; // skip '\'
-        if (jsonString[pos] == '"') result += '"';
-        else if (jsonString[pos] == '\\') result += '\\';
-        else if (jsonString[pos] == '/') result += '/';
-        else if (jsonString[pos] == 'b') result += '\b';
-        else if (jsonString[pos] == 'f') result += '\f';
-        else if (jsonString[pos] == 'n') result += '\n';
-        else if (jsonString[pos] == 'r') result += '\r';
-        else if (jsonString[pos] == 't') result += '\t';
-        else throw std::runtime_error("Invalid escape sequence");
+        switch (jsonString[pos]) {
+          case '"': result += '"'; break;
+          case '\\': result += '\\'; break;
+          case '/': result += '/'; break;
+          case 'b': result += '\b'; break;
+          case 'f': result += '\f'; break;
+          case 'n': result += '\n'; break;
+          case 'r': result += '\r'; break;
+          case 't': result += '\t'; break;
+          default: throw std::runtime_error("Invalid escape sequence");
+        }
       } else {
         result += jsonString[pos];
       }
       ++pos;
     }
+    if (pos == jsonString.size() || jsonString[pos] != '"') throw std::runtime_error("Expected '\"' in string");
     ++pos; // skip closing '"'
     return JSON(result);
   }
 
-  static JSON parseNumber(const std::string& jsonString, size_t& pos) {
+  static JSON parseNumber(std::string_view jsonString, size_t& pos) {
     size_t start = pos;
     if (jsonString[pos] == '-') ++pos;
-    while (std::isdigit(jsonString[pos])) ++pos;
-    if (jsonString[pos] == '.') {
+    while (pos < jsonString.size() && std::isdigit(jsonString[pos])) ++pos;
+    if (pos < jsonString.size() && jsonString[pos] == '.') {
       ++pos;
-      while (std::isdigit(jsonString[pos])) ++pos;
-      return JSON(std::stod(jsonString.substr(start, pos - start)));
+      while (pos < jsonString.size() && std::isdigit(jsonString[pos])) ++pos;
+      return JSON(std::stod(std::string(jsonString.substr(start, pos - start))));
     }
-    return JSON(std::stoi(jsonString.substr(start, pos - start)));
+    return JSON(std::stoi(std::string(jsonString.substr(start, pos - start))));
   }
 
-  static JSON parseBoolean(const std::string& jsonString, size_t& pos) {
+  static JSON parseBoolean(std::string_view jsonString, size_t& pos) {
     if (jsonString.substr(pos, 4) == "true") {
       pos += 4;
       return JSON(true);
@@ -269,7 +346,7 @@ class JSON {
     throw std::runtime_error("Invalid boolean value");
   }
 
-  static JSON parseNull(const std::string& jsonString, size_t& pos) {
+  static JSON parseNull(std::string_view jsonString, size_t& pos) {
     if (jsonString.substr(pos, 4) == "null") {
       pos += 4;
       return JSON();
@@ -286,25 +363,25 @@ class JSON {
       else if constexpr (std::is_same_v<T, double>) os << arg;
       else if constexpr (std::is_same_v<T, std::string>) os << "\"" << arg << "\"";
       else if constexpr (std::is_same_v<T, Object>) {
-      os << "{";
-      bool first = true;
-      for (const auto& [key, value] : arg) {
-        if (!first) os << ",";
-        os << "\"" << key << "\":";
-        value.serialize(os);
-        first = false;
+        os << "{";
+        bool first = true;
+        for (const auto& [key, value] : arg) {
+          if (!first) os << ",";
+          os << "\"" << key << "\":";
+          value.serialize(os);
+          first = false;
+        }
+        os << "}";
+      } else if constexpr (std::is_same_v<T, Array>) {
+        os << "[";
+        bool first = true;
+        for (const auto& value : arg) {
+          if (!first) os << ",";
+          value.serialize(os);
+          first = false;
+        }
+        os << "]";
       }
-      os << "}";
-    } else if constexpr (std::is_same_v<T, Array>) {
-      os << "[";
-      bool first = true;
-      for (const auto& value : arg) {
-        if (!first) os << ",";
-        value.serialize(os);
-        first = false;
-      }
-      os << "]";
-    }
     }, value);
   }
 };

@@ -3,7 +3,7 @@
 
 #include <benchmark/benchmark.h>
 #include "json.hpp"
-#include <nlohmann/json.hpp> // Example with nlohmann/json
+#include <nlohmann/json.hpp>
 
 // Benchmark for parsing JSON with hollins::JSON
 static void BM_HollinsJSON_Parse(benchmark::State& state) {

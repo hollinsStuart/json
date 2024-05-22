@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.27)
 project(json)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 # Include FetchContent module to download Google Test
 include(FetchContent)
@@ -30,6 +30,7 @@ add_executable(JSONTests
         tests/json_serialization_tests.cpp
         tests/json_tests.cpp
         tests/json_prettyprint_test.cpp
+        tests/json_list_test.cpp
 )
 
 add_executable(JSONProject

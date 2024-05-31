@@ -63,10 +63,7 @@ class JSON {
   }
 
   // Overload the assignment operator for JSON objects
-  JSON &operator=(const JSON &other) {
-    value = other.value;
-    return *this;
-  }
+  JSON &operator=(const JSON &other) = default;
 
   // Overload the assignment operator for JSON objects to accept different value types
   JSON &operator=(const std::string &s) {
@@ -95,30 +92,25 @@ class JSON {
   }
 
   // Add methods
-  void insert(const std::string &key, const JSON &value) {
+  void add(const std::string& key, const JSON& value) {
     if (!isObject()) throw std::runtime_error("Not an object: attempted to add key '" + key + "'");
     std::get<Object>(this->value)[key] = value;
   }
 
-  void emplace(const JSON &value) {
+  void add(const JSON& value) {
     if (!isArray()) throw std::runtime_error("Not an array: attempted to add value");
     std::get<Array>(this->value).push_back(value);
   }
 
-  void insert(const JSON &value) {
-
-  }
-
-  void remove(const std::string &key) {
+  void remove(const std::string& key) {
     if (!isObject()) throw std::runtime_error("Not an object: attempted to remove key '" + key + "'");
     std::get<Object>(value).erase(key);
   }
 
   void remove(size_t index) {
     if (!isArray()) throw std::runtime_error("Not an array: attempted to remove index " + std::to_string(index));
-    auto &array = std::get<Array>(value);
-    if (index >= array.size())
-      throw std::runtime_error("Index out of bounds: attempted to remove index " + std::to_string(index));
+    auto& array = std::get<Array>(value);
+    if (index >= array.size()) throw std::runtime_error("Index out of bounds: attempted to remove index " + std::to_string(index));
     array.erase(array.begin() + index);
   }
 

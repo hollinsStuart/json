@@ -20,8 +20,8 @@ TEST(JSONEasyTest, AccessAndModification) {
 
 TEST(JSONEasyTest, AddAndRemove) {
   hollins::JSON jsonObject;
-  jsonObject.add({"name", "John Doe"});
-  jsonObject.add({"age", 30});
+  jsonObject.insert({"name", "John Doe"});
+  jsonObject.add("age", 30);
 
   EXPECT_EQ(jsonObject["name"].toString(), "John Doe");
   EXPECT_EQ(jsonObject["age"].toInt(), 30);
